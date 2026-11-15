@@ -47,7 +47,7 @@
     hide(ad);
     void ad.offsetWidth; // Restart the animation if it is already playing.
     show(ad);
-    announce('TheBigMove.tv: coming in 2027.');
+    announce('The Big Move: coming in 2027.');
     adTimer = window.setTimeout(endAd, AD_MS);
   }
 
