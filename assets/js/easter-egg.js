@@ -126,6 +126,16 @@
     var overTitle = '';
     var returnFocus = null;
 
+    // On-screen prompts follow how the visitor is actually playing.
+    var finePointer = window.matchMedia && window.matchMedia('(hover: hover) and (pointer: fine)').matches;
+    var inputMode = finePointer ? 'mouse' : 'touch';
+    var PROMPTS = {
+      mouse: { blow: 'CLICK TO BLOW!', start: 'CLICK TO START', move: 'MOVE: MOUSE', again: 'CLICK TO PLAY' },
+      touch: { blow: 'TAP TO BLOW!', start: 'TAP TO START', move: 'MOVE: DRAG', again: 'TAP TO PLAY' },
+      keys: { blow: 'SPACE TO BLOW!', start: 'SPACE TO START', move: 'MOVE: ARROWS', again: 'SPACE TO PLAY' }
+    };
+    function prompt(name) { return PROMPTS[inputMode][name]; }
+
     function cartColors(label) { return { '#': C.ink, o: C.grey, L: label, '-': C.greyDark }; }
     var GOLD_COLORS = { '#': C.ink, o: C.gold, L: C.cream, '-': C.goldDark };
 
@@ -242,7 +252,7 @@
       spawnTimer = 0.6;
       catcherX = W / 2;
       setState('play');
-      announce('Go! Move with the arrow keys or by dragging. Catch the cartridges and dodge the dust bunnies.');
+      announce('Go! Move with the mouse, a finger or the arrow keys. Catch the cartridges and dodge the dust bunnies.');
     }
 
     function gameOver(title) {
@@ -252,7 +262,7 @@
       pointerTarget = null;
       setState('over');
       announce((title === 'TIME!' ? 'Time is up.' : 'Game over.') + ' You scored ' + score +
-        '. Best this visit: ' + best + '. Press Space or tap to play again, or Escape to leave.');
+        '. Best this visit: ' + best + '. Click, tap or press Space to play again, or Escape to leave.');
     }
 
     function action() {
@@ -336,7 +346,7 @@
         if (bootTimer <= 0) {
           if (bootWorks) {
             setState('title');
-            announce('It works! Press Space or tap to start.');
+            announce('It works! Click, tap or press Space to start.');
           } else {
             resetBlow(2);
             announce('Still dusty. Blow again!');
@@ -362,7 +372,7 @@
       ctx.fillStyle = C.teal;
       ctx.fillRect(41, 75, Math.round(78 * clean), 5);
       text(blowRound === 1 ? 'DUSTY CARTRIDGE' : 'STILL DUSTY!', 80, 88, C.cream);
-      if (blink(2.5)) { text('TAP/SPACE TO BLOW', 80, 104, C.gold); }
+      if (blink(2.5)) { text(prompt('blow'), 80, 104, C.gold); }
     }
 
     function drawGlitch() {
@@ -385,8 +395,8 @@
       var bob = reducedMotion.matches ? 0 : Math.round(Math.sin(clock * 3) * 2);
       sprite(CART, 75, 54 + bob, cartColors(C.teal));
       sprite(CONSOLE, 70, 70, CONSOLE_COLORS);
-      if (blink(2)) { text('TAP OR SPACE', 80, 88, C.gold); }
-      text('MOVE: ARROWS/DRAG', 80, 102, C.grey);
+      if (blink(2)) { text(prompt('start'), 80, 88, C.gold); }
+      text(prompt('move'), 80, 102, C.grey);
       if (best > 0) { text('BEST ' + best, 80, 116, C.teal); }
     }
 
@@ -409,8 +419,8 @@
       text('SCORE ' + score, 80, 48, C.cream);
       text('BEST ' + best, 80, 62, C.teal);
       if (overDelay <= 0 && blink(2)) {
-        text('TAP OR SPACE', 80, 90, C.gold);
-        text('TO PLAY AGAIN', 80, 102, C.grey);
+        text(prompt('again'), 80, 90, C.gold);
+        text('AGAIN', 80, 102, C.grey);
       }
     }
 
@@ -457,11 +467,12 @@
       if (key === 'Tab' || event.ctrlKey || event.altKey || event.metaKey || !inGame(event.target)) { return; }
       if (event.target === closeButton && (key === 'Enter' || key === ' ')) { return; }
       if (key === 'ArrowLeft' || key === 'a' || key === 'A') {
-        keyLeft = true; pointerTarget = null; event.preventDefault();
+        keyLeft = true; pointerTarget = null; inputMode = 'keys'; event.preventDefault();
       } else if (key === 'ArrowRight' || key === 'd' || key === 'D') {
-        keyRight = true; pointerTarget = null; event.preventDefault();
+        keyRight = true; pointerTarget = null; inputMode = 'keys'; event.preventDefault();
       } else if (key === ' ' || key === 'Enter') {
         event.preventDefault();
+        inputMode = 'keys';
         if (!event.repeat) { action(); }
       } else if (key === 'ArrowUp' || key === 'ArrowDown' || key === 'PageUp' || key === 'PageDown' || key === 'Home' || key === 'End') {
         event.preventDefault();
@@ -479,16 +490,25 @@
       pointerTarget = (event.clientX - r.left) / r.width * W;
     }
 
+    function pointerMode(event) { inputMode = event.pointerType === 'mouse' ? 'mouse' : 'touch'; }
+
     canvas.addEventListener('pointerdown', function (event) {
       if (state === 'off') { return; }
       event.preventDefault();
+      pointerMode(event);
       try { canvas.setPointerCapture(event.pointerId); } catch (e) { /* not needed */ }
       aimAt(event);
       if (state !== 'play') { action(); }
     });
-    canvas.addEventListener('pointermove', function (event) {
+
+    // While playing, the console follows the mouse anywhere on the page, and a
+    // finger anywhere on the game screen.
+    function onPointerMove(event) {
+      var isMouse = event.pointerType === 'mouse';
+      if (!isMouse && !root.contains(event.target)) { return; }
+      inputMode = isMouse ? 'mouse' : 'touch';
       if (state === 'play') { aimAt(event); }
-    });
+    }
     closeButton.addEventListener('click', function () { stop(); });
 
     function onResize() { place(bigBox()); }
@@ -516,9 +536,10 @@
       try { root.focus({ preventScroll: true }); } catch (e) { root.focus(); }
       bringIntoView();
       resetBlow(1);
-      announce('Cartridge Catch. The cartridge is dusty: press Space or tap quickly to blow it clean. Press Escape to leave.');
+      announce('Cartridge Catch. The cartridge is dusty: click, tap or press Space quickly to blow it clean. Press Escape to leave.');
       document.addEventListener('keydown', onKey, true);
       document.addEventListener('keyup', onKeyUp, true);
+      document.addEventListener('pointermove', onPointerMove);
       window.addEventListener('resize', onResize);
       document.addEventListener('visibilitychange', onVisibility);
       lastTime = 0;
@@ -535,6 +556,7 @@
       pointerTarget = null;
       document.removeEventListener('keydown', onKey, true);
       document.removeEventListener('keyup', onKeyUp, true);
+      document.removeEventListener('pointermove', onPointerMove);
       window.removeEventListener('resize', onResize);
       document.removeEventListener('visibilitychange', onVisibility);
       if (root.contains(document.activeElement)) {
