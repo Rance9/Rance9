@@ -233,21 +233,73 @@ main:focus { outline: none; }
   height: auto;
 }
 
-/* Easter-egg decorations: hidden until revealed; never animated. */
-.tv-power {
+/* Lights out: the lamp darkens the room; the TV keeps glowing and
+   glow-in-the-dark stars (and a hint) appear on the wall. */
+.room-dark {
   position: absolute;
-  /* Centre of the clear patch between the two rivets on the TV control panel,
-     at (1306.5, 254.8) in the 1672 x 941 illustration. */
-  left: 78.14%;
-  top: 27.08%;
-  width: max(0.4%, 2px);
-  aspect-ratio: 1 / 1;
-  transform: translate(-50%, -50%);
-  border-radius: 50%;
-  background: #4DB6A9;
-  box-shadow: 0 0 0 max(0.06vw, 0.5px) #174A45;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  max-width: none;
   pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.45s ease;
 }
+.hero.is-dark .room-dark { opacity: 1; }
+.room-dark .rd-glow { fill: #DDFFB8; }
+.room-dark text {
+  font-family: var(--sans);
+  font-size: 13px;
+  letter-spacing: 2px;
+}
+
+/* Cartridge Catch: the TV screen zooms up into a small game. Position and
+   size are set by the script (custom properties) so the screen grows out of
+   the TV and stays on the page. */
+.tv-game {
+  position: absolute;
+  z-index: 5;
+  left: var(--game-x, 62.656%);
+  top: var(--game-y, 17.917%);
+  width: var(--game-w, 13.359%);
+  height: var(--game-h, 19.306%);
+  border-radius: 6% / 7.5%;
+  overflow: hidden;
+  background: #181D24;
+  box-shadow: 0 0 0 3px #2B2D26, 0 12px 32px rgba(0, 0, 0, 0.45);
+  touch-action: none;
+  -webkit-user-select: none;
+  user-select: none;
+  transition: left 0.35s ease, top 0.35s ease, width 0.35s ease, height 0.35s ease;
+}
+.tv-game:focus { outline: none; }
+.hero.is-dark .tv-game { box-shadow: 0 0 0 3px #2B2D26, 0 0 48px rgba(143, 184, 255, 0.45); }
+.tv-game-screen {
+  display: block;
+  width: 100%;
+  height: 100%;
+  image-rendering: pixelated;
+  cursor: pointer;
+}
+.tv-game[data-state="play"] .tv-game-screen { cursor: none; }
+.tv-game-close {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid var(--paper);
+  border-radius: 50%;
+  background: rgba(24, 29, 36, 0.85);
+  color: var(--paper);
+  font: 700 1.25rem/1 var(--sans);
+  cursor: pointer;
+}
+.tv-game-close:focus-visible { outline: 3px solid var(--paper); outline-offset: 2px; }
 
 /* Illustration hotspots: clickable objects drawn over the hero image in the
    image's own 1280 x 720 coordinate space, so they scale with it. */
@@ -557,14 +609,6 @@ main:focus { outline: none; }
   text-align: center;
   font-size: 1rem;
   line-height: 1.1;
-}
-.pixel-heart {
-  position: absolute;
-  top: 50%;
-  left: calc(100% + 0.6rem);
-  transform: translateY(-50%);
-  width: 14px;
-  height: 12px;
 }
 
 .footer-link { justify-self: end; font-size: 1.125rem; }
