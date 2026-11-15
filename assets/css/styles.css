@@ -247,10 +247,34 @@ main:focus { outline: none; }
 }
 .hero.is-dark .room-dark { opacity: 1; }
 .room-dark .rd-glow { fill: #DDFFB8; }
-.room-dark text {
+
+/* The glow-in-the-dark hint under the picture: the keyboard code on
+   computers, the swipe version on touch screens. HTML (not SVG) so it never
+   shrinks below a readable size on phones. */
+.rd-hint {
+  position: absolute;
+  left: 48%;
+  top: 28%;
+  transform: translateX(-50%);
+  margin: 0;
+  white-space: nowrap;
   font-family: var(--sans);
-  font-size: 13px;
-  letter-spacing: 2px;
+  font-size: clamp(9px, 1.05vw, 13px);
+  line-height: 1.2;
+  letter-spacing: 0.12em;
+  color: #DDFFB8;
+  text-shadow: 0 0 4px rgba(190, 255, 150, 0.9), 0 0 10px rgba(160, 255, 120, 0.6);
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.45s ease;
+}
+.hero.is-dark .rd-hint { opacity: 1; }
+.rd-hint-touch { display: none; }
+@media (hover: none) and (pointer: coarse) {
+  .rd-hint-keys { display: none; }
+  .rd-hint-touch { display: inline; }
+  /* With the lights out, swipes on the picture enter the code instead of scrolling. */
+  .hero.is-dark { touch-action: none; }
 }
 
 /* Cartridge Catch: the TV screen zooms up into a small game. Position and
@@ -300,6 +324,175 @@ main:focus { outline: none; }
   cursor: pointer;
 }
 .tv-game-close:focus-visible { outline: 3px solid var(--paper); outline-offset: 2px; }
+
+/* Dust Bunny Hunt (secret): the whole picture is the playfield. */
+.bunny-hunt {
+  position: absolute;
+  inset: 0;
+  z-index: 4;
+  -webkit-user-select: none;
+  user-select: none;
+  touch-action: manipulation;
+}
+.bunny-hunt:focus { outline: none; }
+.hunt-hud {
+  position: absolute;
+  top: 8px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 1.25em;
+  margin: 0;
+  padding: 0.6em 1em;
+  border-radius: 8px;
+  background: rgba(24, 29, 36, 0.88);
+  color: var(--paper);
+  font: 8px/1 var(--pixel);
+  white-space: nowrap;
+}
+.hunt-hud b { color: var(--tbm-gold); font-weight: 400; }
+@media (min-width: 560px) { .hunt-hud { font-size: 16px; } }
+.hunt-field { position: absolute; inset: 0; }
+.hunt-bunny {
+  position: absolute;
+  width: clamp(30px, 4.4%, 56px);
+  padding: 10px; /* a 44 px+ tap target even when the bunny is small */
+  box-sizing: content-box;
+  border: 0;
+  border-radius: 8px;
+  background: none;
+  transform: translate(-50%, calc(-100% + 10px));
+  cursor: pointer;
+}
+.hunt-bunny svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  transform-origin: 50% 100%;
+  animation: hunt-pop 0.18s ease-out, hunt-wiggle 0.5s ease-in-out 0.18s infinite alternate;
+}
+.hunt-bunny.is-leaving svg { animation: hunt-hide 0.15s ease-in forwards; }
+.hunt-bunny:focus-visible { outline: 3px solid var(--paper); outline-offset: 0; }
+.hunt-poof {
+  position: absolute;
+  width: 0;
+  height: 0;
+  pointer-events: none;
+}
+.hunt-poof i {
+  position: absolute;
+  left: -2px;
+  top: -2px;
+  width: 4px;
+  height: 4px;
+  background: #A49F99;
+  animation: hunt-puff 0.5s ease-out forwards;
+}
+.hunt-poof b {
+  position: absolute;
+  left: 0;
+  top: -1.5em;
+  transform: translateX(-50%);
+  color: var(--tbm-gold);
+  font: 400 16px/1 var(--pixel);
+  text-shadow: 0 2px 0 #181D24;
+  animation: hunt-rise 0.6s ease-out forwards;
+}
+.hunt-card {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: min(26rem, calc(100vw - 32px));
+  padding: 1.5rem 1.25rem 1.25rem;
+  border-radius: 14px;
+  background: var(--card);
+  color: var(--card-text);
+  text-align: center;
+  box-shadow: 0 18px 48px rgba(0, 0, 0, 0.4);
+}
+.hunt-kicker { font: 8px/1.5 var(--pixel); letter-spacing: 0.1em; color: var(--tbm-gold); }
+.hunt-title { margin-top: 0.6rem; font: 16px/1.4 var(--pixel); color: var(--paper); }
+.hunt-text { margin-top: 0.75rem; font-size: 1.0625rem; line-height: 1.45; color: var(--card-soft); }
+.hunt-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  margin-top: 1rem;
+  padding: 0.3rem 2.2rem;
+  border: 2px solid var(--card-text);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--card-text);
+  font: 400 1.1875rem/1.2 var(--sans);
+  cursor: pointer;
+}
+.hunt-button:hover { background: var(--card-text); color: var(--card); }
+.hunt-button:focus-visible { outline: 3px solid var(--paper); outline-offset: 3px; }
+@keyframes hunt-pop { from { transform: scale(0.2, 0); } to { transform: none; } }
+@keyframes hunt-wiggle { from { transform: rotate(-5deg); } to { transform: rotate(5deg); } }
+@keyframes hunt-hide { to { transform: scale(0.2, 0); } }
+@keyframes hunt-puff { to { transform: translate(var(--dx), var(--dy)); opacity: 0; } }
+@keyframes hunt-rise { to { transform: translate(-50%, -1.2em); opacity: 0; } }
+
+/* Product pop-up from the yearbook and the console: the product's own look,
+   a short blurb, its release, and a pill that opens the site in a new tab. */
+.product-modal {
+  border: 0;
+  padding: 0;
+  border-radius: 16px;
+  width: min(25rem, calc(100vw - 2 * var(--gutter)));
+  background: var(--card);
+  color: var(--card-text);
+  box-shadow: 0 18px 48px rgba(0, 0, 0, 0.35);
+}
+.product-modal::backdrop { background: rgba(34, 26, 21, 0.55); }
+.product-modal-body {
+  position: relative;
+  padding: 2.25rem 1.5rem 1.6rem;
+  text-align: center;
+}
+.product-modal .product-name { font-size: 24px; }
+.product-modal .product-name--he {
+  font-family: var(--georgia);
+  font-weight: 700;
+  font-size: 2rem;
+  line-height: 1.05;
+  letter-spacing: 0.06em;
+}
+.product-modal .product-tagline { margin-top: 0.75rem; }
+.product-modal-blurb { margin-top: 0.6rem; font-size: 1.125rem; line-height: 1.45; color: var(--card-soft); }
+.product-modal .product-release { margin-top: 0.9rem; }
+.pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5em;
+  min-height: 44px;
+  margin-top: 1.25rem;
+  padding: 0.55rem 1.6rem;
+  border-radius: 999px;
+  text-decoration: none;
+}
+.pill::after { content: "↗"; font-family: var(--sans); font-size: 1.1em; }
+.pill:focus-visible { outline: 3px solid var(--paper); outline-offset: 3px; }
+.product-modal .pill { display: flex; width: fit-content; margin-inline: auto; }
+.product-modal[data-theme="ccs"] .pill {
+  background: var(--studio-red);
+  color: #FFFFFF;
+  font: 400 16px/1 var(--pixel);
+  box-shadow: 0 4px 0 #8E1F19;
+}
+.product-modal[data-theme="ccs"] .pill:active { transform: translateY(2px); box-shadow: 0 2px 0 #8E1F19; }
+.product-modal[data-theme="he"] .pill {
+  background: var(--he-silver);
+  color: #0B0D10;
+  font: 700 1.1875rem/1 var(--georgia);
+  letter-spacing: 0.04em;
+}
+.product-modal .pill:hover { filter: brightness(1.08); }
+.product-modal .tv-game-close { top: 10px; right: 10px; }
 
 /* Illustration hotspots: clickable objects drawn over the hero image in the
    image's own 1280 x 720 coordinate space, so they scale with it. */

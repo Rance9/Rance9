@@ -24,6 +24,12 @@
   function announce(text) { if (status) { status.textContent = text; } }
   function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
 
+  // A dust bunny, 10 x 8 pixels: # outline, a fuzz, K eyes.
+  var DUST_SPRITE = ['..#.##.#..', '.#aaaaaa#.', '#aaaaaaaa#', '#aKaaaaKa#', '#aaaaaaaa#',
+    '#aaa##aaa#', '.#aaaaaa#.', '..######..'];
+  var touchFirst = window.matchMedia ?
+    window.matchMedia('(hover: none) and (pointer: coarse)') : { matches: false };
+
   /* ---- TV screen: "coming soon" ----------------------------------------- */
 
   var tv = document.querySelector('[data-tv-trigger]');
@@ -59,9 +65,11 @@
   /* ---- Lamp: lights out ---------------------------------------------------- */
 
   var roomDark = document.querySelector('[data-room-dark]');
+  var roomHint = document.querySelector('[data-room-hint]');
   var lamp = document.querySelector('[data-lamp]');
   if (hero && roomDark && lamp) {
     show(roomDark);
+    if (roomHint) { show(roomHint); }
     lamp.addEventListener('click', function () {
       announce(hero.classList.toggle('is-dark') ? 'Lights out.' : 'Lights on.');
     });
@@ -91,8 +99,7 @@
     var CART = ['##########', '#oooooooo#', '#oLLLLLLo#', '#oLLLLLLo#', '#oLLLLLLo#',
       '#oLLLLLLo#', '#oooooooo#', '#o-o-o-oo#', '#oooooooo#', '#oo####oo#', '#oo#..#oo#', '####..####'];
     var CART_UP = CART.slice().reverse();
-    var DUST = ['..#.##.#..', '.#aaaaaa#.', '#aaaaaaaa#', '#aKaaaaKa#', '#aaaaaaaa#',
-      '#aaa##aaa#', '.#aaaaaa#.', '..######..'];
+    var DUST = DUST_SPRITE;
     var CONSOLE = ['....############....', '...#cccccccccccc#...', '..#ccccc####ccccc#..',
       '.#cccccc#..#cccccc#.', '#cccccccccccccccccc#', '#cRcccccccccccTcTcc#',
       '#cccccccccccccccccc#', '####################'];
@@ -574,25 +581,343 @@
   var game = createGame();
   var picture = document.querySelector('[data-picture]');
   if (game && picture) {
-    picture.addEventListener('click', function () { game.start(); });
+    picture.addEventListener('click', function () { if (!hunt || !hunt.isActive()) { game.start(); } });
+    picture.addEventListener('keydown', function (event) {
+      if (event.key === 'Enter' || event.key === ' ') {
+        event.preventDefault();
+        if (!event.repeat) { game.start(); }
+      }
+    });
     show(picture);
   }
 
-  /* ---- The classic cheat code ----------------------------------------------- */
+  /* ---- Dust Bunny Hunt (secret: only the cheat code opens it) ---------------- */
 
-  var sequence = ['ArrowUp', 'ArrowUp', 'ArrowDown', 'ArrowDown',
-    'ArrowLeft', 'ArrowRight', 'ArrowLeft', 'ArrowRight', 'b', 'a'];
+  function createHunt() {
+    var root = document.querySelector('[data-hunt]');
+    if (!hero || !root) { return null; }
+    var field = root.querySelector('[data-hunt-field]');
+    var card = root.querySelector('[data-hunt-card]');
+    var kicker = root.querySelector('[data-hunt-kicker]');
+    var title = root.querySelector('[data-hunt-title]');
+    var blurb = root.querySelector('[data-hunt-text]');
+    var go = root.querySelector('[data-hunt-go]');
+    var closeButton = root.querySelector('[data-hunt-close]');
+    var hud = root.querySelector('[data-hunt-hud]');
+    var scoreText = root.querySelector('[data-hunt-score]');
+    var timeText = root.querySelector('[data-hunt-time]');
+    if (!field || !card || !go || !closeButton || !hud) { return null; }
 
-  // Prefix table (Knuth–Morris–Pratt) so a mistaken or overlapping attempt,
-  // such as an extra ArrowUp at the start, still matches correctly.
-  var fallback = [0];
-  for (var i = 1, k = 0; i < sequence.length; i++) {
-    while (k > 0 && sequence[i] !== sequence[k]) { k = fallback[k - 1]; }
-    if (sequence[i] === sequence[k]) { k++; }
-    fallback[i] = k;
+    var SECONDS = 30;
+    var SVG_NS = 'http://www.w3.org/2000/svg';
+    // Hiding places in the 1280 x 720 picture: where a bunny's feet touch down.
+    var SPOTS = [
+      [42, 106], [378, 262], [232, 332], [352, 333], [110, 345], [330, 452], [914, 549], [812, 462],
+      [852, 368], [930, 104], [1000, 448], [1182, 478], [1150, 600], [690, 40], [545, 400]
+    ];
+    var NORMAL = { '#': '#4A4540', a: '#A49F99', K: '#0B0D10' };
+    var GOLDEN = { '#': '#8B6914', a: '#F5A623', K: '#0B0D10' };
+
+    var state = 'off';
+    var raf = 0;
+    var lastTime = 0;
+    var timeLeft = SECONDS;
+    var spawnTimer = 0;
+    var score = 0;
+    var best = 0;
+    var bunnies = [];
+    var returnFocus = null;
+
+    function verb() { return touchFirst.matches ? 'Tap' : 'Click'; }
+
+    function bunnySvg(colors) {
+      var svg = document.createElementNS(SVG_NS, 'svg');
+      svg.setAttribute('viewBox', '0 0 10 8');
+      svg.setAttribute('shape-rendering', 'crispEdges');
+      svg.setAttribute('aria-hidden', 'true');
+      svg.setAttribute('focusable', 'false');
+      for (var r = 0; r < DUST_SPRITE.length; r++) {
+        for (var c = 0; c < DUST_SPRITE[r].length; c++) {
+          var color = colors[DUST_SPRITE[r].charAt(c)];
+          if (color) {
+            var px = document.createElementNS(SVG_NS, 'rect');
+            px.setAttribute('x', c);
+            px.setAttribute('y', r);
+            px.setAttribute('width', 1);
+            px.setAttribute('height', 1);
+            px.setAttribute('fill', color);
+            svg.appendChild(px);
+          }
+        }
+      }
+      return svg;
+    }
+
+    function place(el, x, y) {
+      el.style.left = (x / 12.8) + '%';
+      el.style.top = (y / 7.2) + '%';
+    }
+
+    function poof(bunny, points) {
+      if (reducedMotion.matches) { return; }
+      var p = document.createElement('span');
+      p.className = 'hunt-poof';
+      place(p, bunny.spot[0], bunny.spot[1] - 12);
+      for (var i = 0; i < 8; i++) {
+        var bit = document.createElement('i');
+        var angle = (i / 8) * Math.PI * 2;
+        bit.style.setProperty('--dx', Math.round(Math.cos(angle) * 26) + 'px');
+        bit.style.setProperty('--dy', Math.round(Math.sin(angle) * 20) + 'px');
+        p.appendChild(bit);
+      }
+      var label = document.createElement('b');
+      label.textContent = '+' + points;
+      p.appendChild(label);
+      field.appendChild(p);
+      window.setTimeout(function () { p.remove(); }, 650);
+    }
+
+    function removeBunny(bunny, delay) {
+      if (document.activeElement === bunny.el) { root.focus({ preventScroll: true }); }
+      window.setTimeout(function () { bunny.el.remove(); }, delay);
+      bunnies.splice(bunnies.indexOf(bunny), 1);
+    }
+
+    function bust(bunny) {
+      if (bunny.done || state !== 'play') { return; }
+      bunny.done = true;
+      var points = bunny.golden ? 3 : 1;
+      score += points;
+      poof(bunny, points);
+      removeBunny(bunny, 0);
+      updateHud();
+    }
+
+    function leave(bunny) {
+      if (bunny.done) { return; }
+      bunny.done = true;
+      bunny.el.classList.add('is-leaving');
+      removeBunny(bunny, reducedMotion.matches ? 0 : 160);
+    }
+
+    function spawn(progress) {
+      var taken = bunnies.map(function (b) { return b.spot; });
+      var free = SPOTS.filter(function (s) { return taken.indexOf(s) < 0; });
+      if (!free.length) { return; }
+      var spot = free[Math.floor(Math.random() * free.length)];
+      var golden = Math.random() < 0.08;
+      var el = document.createElement('button');
+      el.type = 'button';
+      el.className = 'hunt-bunny';
+      el.setAttribute('aria-label', golden ? 'Golden dust bunny' : 'Dust bunny');
+      el.appendChild(bunnySvg(golden ? GOLDEN : NORMAL));
+      place(el, spot[0], spot[1]);
+      var bunny = { el: el, spot: spot, golden: golden, done: false, life: (1.6 - 0.8 * progress) * (0.85 + Math.random() * 0.3) };
+      el.addEventListener('pointerdown', function (event) { event.preventDefault(); bust(bunny); });
+      el.addEventListener('click', function () { bust(bunny); }); // Keyboard: Enter or Space.
+      field.appendChild(el);
+      bunnies.push(bunny);
+    }
+
+    function updateHud() {
+      scoreText.textContent = String(score);
+      timeText.textContent = String(Math.max(0, Math.ceil(timeLeft)));
+    }
+
+    function showCard(top, heading, text, button) {
+      kicker.textContent = top;
+      title.textContent = heading;
+      blurb.textContent = text;
+      go.textContent = button;
+      show(card);
+      try { go.focus({ preventScroll: true }); } catch (e) { go.focus(); }
+    }
+
+    function frame(now) {
+      raf = window.requestAnimationFrame(frame);
+      var dt = lastTime ? Math.min(0.1, (now - lastTime) / 1000) : 0;
+      lastTime = now;
+      if (state !== 'play') { return; }
+      timeLeft -= dt;
+      var progress = clamp(1 - timeLeft / SECONDS, 0, 1);
+      spawnTimer -= dt;
+      if (spawnTimer <= 0 && bunnies.length < 1 + Math.floor(progress * 3)) {
+        spawn(progress);
+        spawnTimer = (0.8 - 0.4 * progress) * (0.8 + Math.random() * 0.4);
+      }
+      for (var i = bunnies.length - 1; i >= 0; i--) {
+        bunnies[i].life -= dt;
+        if (bunnies[i].life <= 0) { leave(bunnies[i]); }
+      }
+      if (timeLeft <= 0) { finish(); } else { updateHud(); }
+    }
+
+    function clearBunnies() {
+      while (bunnies.length) { var b = bunnies[0]; b.done = true; removeBunny(b, 0); }
+      field.textContent = '';
+    }
+
+    function play() {
+      clearBunnies();
+      score = 0;
+      timeLeft = SECONDS;
+      spawnTimer = 0.3;
+      updateHud();
+      hide(card);
+      show(hud);
+      state = 'play';
+      root.setAttribute('data-state', 'play');
+      try { root.focus({ preventScroll: true }); } catch (e) { root.focus(); }
+      announce('Go! ' + verb() + ' the dust bunnies before they hide. Keyboard: Tab to a bunny and press Enter.');
+    }
+
+    function finish() {
+      state = 'over';
+      root.setAttribute('data-state', 'over');
+      clearBunnies();
+      best = Math.max(best, score);
+      hide(hud);
+      showCard('TIME!', score + ' BUSTED', 'Best this visit: ' + best + '. Thanks for finding the secret.', 'Play again');
+      announce('Time! You busted ' + score + ' dust bunnies. Best this visit: ' + best + '.');
+    }
+
+    function onKey(event) {
+      if (event.key === 'Escape') { event.preventDefault(); stop(); }
+    }
+
+    function onVisibility() {
+      if (document.hidden) {
+        window.cancelAnimationFrame(raf);
+        raf = 0;
+      } else if (state !== 'off' && !raf) {
+        lastTime = 0;
+        raf = window.requestAnimationFrame(frame);
+      }
+    }
+
+    function start() {
+      if (state !== 'off' || (game && game.isActive())) { return; }
+      endAd();
+      var active = document.activeElement;
+      returnFocus = active && active !== document.body && !root.contains(active) ? active : null;
+      show(root);
+      hide(hud);
+      state = 'intro';
+      root.setAttribute('data-state', 'intro');
+      var rect = hero.getBoundingClientRect();
+      if (rect.top < 0 || rect.bottom > window.innerHeight) {
+        hero.scrollIntoView({ block: 'center', behavior: reducedMotion.matches ? 'auto' : 'smooth' });
+      }
+      var text = verb() + ' the dust bunnies before they hide. You have ' + SECONDS + ' seconds.';
+      showCard('SECRET UNLOCKED', 'DUST BUNNY HUNT', text, 'Start');
+      announce('Secret unlocked: Dust Bunny Hunt. ' + text);
+      document.addEventListener('keydown', onKey, true);
+      document.addEventListener('visibilitychange', onVisibility);
+      lastTime = 0;
+      raf = window.requestAnimationFrame(frame);
+    }
+
+    function stop() {
+      if (state === 'off') { return; }
+      window.cancelAnimationFrame(raf);
+      raf = 0;
+      state = 'off';
+      root.setAttribute('data-state', 'off');
+      clearBunnies();
+      document.removeEventListener('keydown', onKey, true);
+      document.removeEventListener('visibilitychange', onVisibility);
+      if (root.contains(document.activeElement)) {
+        if (returnFocus && document.contains(returnFocus)) { returnFocus.focus({ preventScroll: true }); } else { document.activeElement.blur(); }
+      }
+      returnFocus = null;
+      hide(root);
+      announce('Dust Bunny Hunt closed.');
+    }
+
+    go.addEventListener('click', function () { if (state === 'intro' || state === 'over') { play(); } });
+    closeButton.addEventListener('click', stop);
+
+    return { start: start, isActive: function () { return state !== 'off'; } };
   }
 
-  var matched = 0;
+  var hunt = createHunt();
+
+  /* ---- Yearbook and console: a product pop-up before leaving the site --------- */
+
+  var modal = document.querySelector('[data-product-modal]');
+  if (modal && typeof modal.showModal === 'function') {
+    var modalName = modal.querySelector('[data-modal-name]');
+    var modalTagline = modal.querySelector('[data-modal-tagline]');
+    var modalBlurb = modal.querySelector('[data-modal-blurb]');
+    var modalRelease = modal.querySelector('[data-modal-release]');
+    var modalLink = modal.querySelector('[data-modal-link]');
+    var modalLinkNote = modal.querySelector('[data-modal-link-note]');
+    var links = document.querySelectorAll('[data-product-link]');
+
+    var openProduct = function (link) {
+      var product = link.getAttribute('data-product-link');
+      var source = document.querySelector('.product-card[data-product="' + product + '"]');
+      if (!source) { return false; }
+      var name = source.querySelector('.product-name');
+      modalName.className = name.className + ' product-modal-name';
+      modalName.textContent = '';
+      for (var n = 0; n < name.childNodes.length; n++) { modalName.appendChild(name.childNodes[n].cloneNode(true)); }
+      modalTagline.textContent = source.querySelector('.product-tagline').textContent;
+      modalBlurb.textContent = source.querySelector('.product-description').textContent;
+      modalRelease.textContent = source.querySelector('.product-release').textContent;
+      var href = link.getAttribute('href');
+      modalLink.setAttribute('href', href);
+      modalLinkNote.textContent = ' (opens ' + href.replace(/^https?:\/\//, '').replace(/\/$/, '') + ' in a new tab)';
+      modal.setAttribute('data-theme', product);
+      endAd();
+      modal.showModal();
+      return true;
+    };
+
+    for (var l = 0; l < links.length; l++) {
+      var label = links[l].getAttribute('aria-label') || '';
+      links[l].setAttribute('aria-label', label.replace(/\s*\(opens in a new tab\)$/, ''));
+      links[l].setAttribute('aria-haspopup', 'dialog');
+      links[l].addEventListener('click', function (event) {
+        if (openProduct(this)) { event.preventDefault(); }
+      });
+    }
+    modal.addEventListener('click', function (event) {
+      // The backdrop and the close button close it; the pill opens the site and closes it too.
+      if (event.target === modal || event.target.closest('[data-modal-close]') || event.target.closest('[data-modal-link]')) {
+        modal.close();
+      }
+    });
+  }
+
+  /* ---- The classic cheat code (keyboard) and its swipe version (touch) ------ */
+
+  // Returns a function that takes one input at a time and reports when the
+  // whole sequence has just been entered. A prefix table (Knuth–Morris–Pratt)
+  // means a mistaken or overlapping attempt, such as an extra Up at the
+  // start, still matches correctly.
+  function sequenceMatcher(sequence) {
+    var fallback = [0];
+    for (var i = 1, k = 0; i < sequence.length; i++) {
+      while (k > 0 && sequence[i] !== sequence[k]) { k = fallback[k - 1]; }
+      if (sequence[i] === sequence[k]) { k++; }
+      fallback[i] = k;
+    }
+    var matched = 0;
+    var next = function (input) {
+      while (matched > 0 && sequence[matched] !== input) { matched = fallback[matched - 1]; }
+      if (sequence[matched] === input) { matched++; }
+      if (matched === sequence.length) { matched = 0; return true; }
+      return false;
+    };
+    next.reset = function () { matched = 0; };
+    return next;
+  }
+
+  var keyCode = sequenceMatcher(['ArrowUp', 'ArrowUp', 'ArrowDown', 'ArrowDown',
+    'ArrowLeft', 'ArrowRight', 'ArrowLeft', 'ArrowRight', 'b', 'a']);
+  var swipeCode = sequenceMatcher(['up', 'up', 'down', 'down', 'left', 'right', 'left', 'right']);
+
   var modifierOnly = {
     Shift: true, Control: true, Alt: true, AltGraph: true, Meta: true,
     OS: true, CapsLock: true, Fn: true, FnLock: true, Hyper: true, Super: true
@@ -607,21 +932,39 @@
 
   document.addEventListener('keydown', function (event) {
     var key = event.key;
-    if (!game || game.isActive()) { matched = 0; return; }
+    if (!hunt || hunt.isActive() || (game && game.isActive())) { keyCode.reset(); return; }
     if (typeof key !== 'string' || event.repeat || event.isComposing) { return; }
     if (event.ctrlKey || event.altKey || event.metaKey || modifierOnly[key]) { return; }
+    if (key === ' ' || key === 'Enter') { return; } // "B space A" or a final Enter still count.
     if (isEditable(event.target)) { return; }
     if (key.length === 1) {
       key = key.toLowerCase();
     } else if (event.shiftKey) {
       return; // Shift with a navigation key is a selection shortcut.
     }
-
-    while (matched > 0 && sequence[matched] !== key) { matched = fallback[matched - 1]; }
-    if (sequence[matched] === key) { matched++; }
-    if (matched === sequence.length) {
-      matched = 0;
-      game.start();
-    }
+    if (keyCode(key)) { hunt.start(); }
   });
+
+  // Touch screens: with the lights out, swipe the arrows on the room. Taps
+  // are ignored here, so they keep working as usual. (While the room is dark
+  // the picture does not scroll the page; see styles.css.)
+  var swipeStart = null;
+  if (hero && hunt) {
+    hero.addEventListener('pointerdown', function (event) {
+      swipeStart = null;
+      if (event.pointerType === 'mouse' || !touchFirst.matches || !hero.classList.contains('is-dark') ||
+        hunt.isActive() || (game && game.isActive())) { return; }
+      swipeStart = { x: event.clientX, y: event.clientY, id: event.pointerId };
+    });
+    hero.addEventListener('pointerup', function (event) {
+      if (!swipeStart || event.pointerId !== swipeStart.id) { return; }
+      var dx = event.clientX - swipeStart.x;
+      var dy = event.clientY - swipeStart.y;
+      swipeStart = null;
+      if (Math.max(Math.abs(dx), Math.abs(dy)) < 24) { return; } // A tap, not a swipe.
+      var direction = Math.abs(dx) > Math.abs(dy) ? (dx > 0 ? 'right' : 'left') : (dy > 0 ? 'down' : 'up');
+      if (swipeCode(direction)) { hunt.start(); }
+    });
+    hero.addEventListener('pointercancel', function () { swipeStart = null; });
+  }
 }());
