@@ -35,6 +35,13 @@
   font-display: swap;
   src: url("../fonts/PressStart2P-Regular.ttf") format("truetype");
 }
+@font-face {
+  font-family: "Space Grotesk";
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url("../fonts/SpaceGrotesk-Bold.woff2") format("woff2");
+}
 
 :root {
   --paper: #F7E2CA;
@@ -50,12 +57,17 @@
   --studio-red: #D63B32;
   --label-bg: #F7E5D0;
   --focus: #1D6564;
+  --glow: #FFF4D6;
+  --tbm-gold: #F5A623;
+  --he-silver: #C3C9D2;
 
   --serif-display: "Source Serif 4 Display", "Source Serif 4", Georgia, "Times New Roman", serif;
   --serif: "Source Serif 4", Georgia, "Times New Roman", serif;
   --sans: "Source Sans 3", "Segoe UI", system-ui, -apple-system, "Helvetica Neue", Arial, sans-serif;
   --mono: "Source Code Pro", ui-monospace, Consolas, "Courier New", monospace;
   --pixel: "Press Start 2P", ui-monospace, monospace;
+  --grotesk: "Space Grotesk", "Segoe UI", system-ui, -apple-system, Arial, sans-serif;
+  --georgia: Georgia, "Source Serif 4", "Times New Roman", serif;
 
   --max: 1120px;
   --gutter: clamp(16px, 5vw, 40px);
@@ -237,6 +249,119 @@ main:focus { outline: none; }
   pointer-events: none;
 }
 
+/* Illustration hotspots: clickable objects drawn over the hero image in the
+   image's own 1280 x 720 coordinate space, so they scale with it. */
+.hotspots {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  max-width: none;
+  overflow: visible;
+  pointer-events: none;
+}
+.hotspot { cursor: pointer; }
+.hotspot:focus-visible { outline: none; }
+.hotspot use {
+  fill: var(--glow);
+  fill-opacity: 0;
+  stroke: none;
+}
+.hotspot .hs-shape { pointer-events: fill; }
+.hotspot .hs-halo { fill: none; pointer-events: none; }
+
+@media (hover: hover) {
+  /* Overlay blending warms the object up like a light coming on while keeping its detail. */
+  .hotspot:hover .hs-shape {
+    fill-opacity: 0.55;
+    mix-blend-mode: overlay;
+    stroke: var(--glow);
+    stroke-opacity: 0.9;
+    stroke-width: 1.5px;
+    filter: url(#hotspot-glow);
+    animation: hotspot-flicker 0.6s linear;
+  }
+}
+
+/* Keyboard focus: a dark ring inside a light ring, visible on any part of the picture. */
+.hotspot:focus-visible .hs-halo { stroke: var(--glow); stroke-width: 7px; }
+.hotspot:focus-visible .hs-shape {
+  fill-opacity: 0.22;
+  mix-blend-mode: normal;
+  filter: none;
+  stroke: var(--ink);
+  stroke-opacity: 1;
+  stroke-width: 3px;
+}
+
+/* TV "commercial": shown on the screen for a few seconds after the TV is
+   chosen. The box matches the screen glass at (802, 129)-(973, 268). */
+.tv-ad {
+  position: absolute;
+  left: 62.656%;
+  top: 17.917%;
+  width: 13.359%;
+  height: 19.306%;
+  border-radius: 8.2% / 10.1%;
+  overflow: hidden;
+  container-type: size;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  color: #F1F5F9;
+  background:
+    repeating-linear-gradient(to bottom, rgba(0, 0, 0, 0) 0 2px, rgba(0, 0, 0, 0.22) 2px 3px),
+    radial-gradient(ellipse at 50% 45%, #1E2235 0%, #0A0C12 75%);
+  box-shadow: inset 0 0 clamp(3px, 1vw, 14px) rgba(0, 0, 0, 0.75);
+  pointer-events: none;
+  transform-origin: 50% 50%;
+  animation: tv-ad 4.5s linear both;
+}
+/* On smaller screens the TV is tiny, so the commercial zooms out from it
+   (staying inside the picture) to keep the text readable. */
+@media (max-width: 1023px) { .tv-ad { transform: scale(1.6); } }
+@media (max-width: 559px) { .tv-ad { transform: scale(2.6); } }
+/* Sizes are relative to the screen box (container query units). */
+.tv-ad-title {
+  max-width: 90%;
+  font-family: var(--grotesk);
+  font-weight: 700;
+  font-size: 12cqw;
+  line-height: 1.05;
+  color: var(--tbm-gold);
+  text-shadow: 0 0 0.35em rgba(245, 166, 35, 0.45);
+}
+.tv-ad-release {
+  max-width: 90%;
+  margin-top: 5cqh;
+  font-family: var(--mono);
+  font-weight: 700;
+  font-size: 9cqw;
+  line-height: 1.2;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+/* Switch on with a flash, hold, then fade back to the picture. */
+@keyframes tv-ad {
+  0% { opacity: 0; filter: brightness(3); }
+  4% { opacity: 1; filter: brightness(2.2); }
+  8% { filter: brightness(1); }
+  90% { opacity: 1; }
+  100% { opacity: 0; }
+}
+
+/* A brief flicker, like an old bulb or tube warming up. */
+@keyframes hotspot-flicker {
+  0% { opacity: 0; }
+  15% { opacity: 1; }
+  25% { opacity: 0.25; }
+  40% { opacity: 0.9; }
+  55% { opacity: 0.45; }
+  100% { opacity: 1; }
+}
+
 /* Sections -------------------------------------------------------------- */
 
 .section {
@@ -261,7 +386,6 @@ main:focus { outline: none; }
 .body-copy {
   font-size: 1.25rem;
   line-height: 1.6;
-  max-width: 44em;
 }
 
 .contact-line { font-size: 1.375rem; line-height: 1.3; }
@@ -290,6 +414,7 @@ main:focus { outline: none; }
   padding: 1.5rem 2rem;
   margin-bottom: 0.25rem;
 }
+.product-card + .product-card { margin-top: 1.25rem; }
 
 .product-id {
   text-align: center;
@@ -312,6 +437,33 @@ main:focus { outline: none; }
      margin cancels the trailing space so the word stays centred. */
   letter-spacing: 0.125em;
   margin-right: -0.125em;
+}
+
+/* Each product name follows its own brand: The Big Move (Space Grotesk, gold),
+   Hallway Echoes (Georgia, silver). */
+.product-card .product-name--tbm {
+  font-family: var(--grotesk);
+  font-weight: 700;
+  font-size: 2.75rem;
+  line-height: 1;
+  letter-spacing: 0;
+}
+.product-name--tbm .product-name-bottom {
+  color: var(--tbm-gold);
+  letter-spacing: 0;
+  margin-right: 0;
+}
+.product-card .product-name--he {
+  font-family: var(--georgia);
+  font-weight: 700;
+  font-size: 2.5rem;
+  line-height: 1.05;
+  letter-spacing: 0.06em;
+}
+.product-name--he span { margin-right: -0.06em; }
+.product-name--he .product-name-bottom {
+  color: var(--he-silver);
+  letter-spacing: 0.06em;
 }
 
 .product-tagline {
@@ -472,6 +624,8 @@ main:focus { outline: none; }
 
 @media (max-width: 1023px) {
   .product-name { font-size: 24px; }
+  .product-card .product-name--tbm { font-size: 2.25rem; }
+  .product-card .product-name--he { font-size: 2rem; }
   .product-id { padding-right: 1.5rem; }
   .product-info { padding-left: 1.75rem; }
   .product-card { padding: 1.5rem; }
@@ -526,6 +680,10 @@ main:focus { outline: none; }
 
 @media (max-width: 359px) {
   .copyright, .footer-link { font-size: 1rem; }
+  /* "CLASSIC CART" needs 12 x 24 px; step down one 8 px grid size to stay on one line. */
+  .product-name { font-size: 16px; }
+  .product-card .product-name--tbm { font-size: 2rem; }
+  .product-card .product-name--he { font-size: 1.75rem; }
 }
 
 @media (prefers-reduced-motion: reduce) {

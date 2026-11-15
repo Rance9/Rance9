@@ -61,6 +61,37 @@
             <img src="assets/images/hero-1280.jpg" width="1672" height="941" fetchpriority="high"
               alt="Sepia engraving of a living room with a sofa, bookshelves, a yearbook on a coffee table, and a vintage television and game console.">
           </picture>
+          <svg class="hotspots" viewBox="0 0 1280 720" preserveAspectRatio="none" focusable="false">
+            <defs>
+              <filter id="hotspot-glow" x="-25%" y="-25%" width="150%" height="150%">
+                <feGaussianBlur in="SourceGraphic" stdDeviation="5" result="blur"/>
+                <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+              </filter>
+              <path id="hs-tv" vector-effect="non-scaling-stroke" d="M816 129H959Q973 129 973 143V254Q973 268 959 268H816Q802 268 802 254V143Q802 129 816 129Z"/>
+              <path id="hs-console" vector-effect="non-scaling-stroke" d="M962 328L1044 331V365L1023 375L945 369L942 340Z"/>
+              <path id="hs-controller" vector-effect="non-scaling-stroke" d="M887 356H916Q927 356 927 367.5Q927 379 916 379H887Q876 379 876 367.5Q876 356 887 356Z"/>
+              <path id="hs-yearbook" vector-effect="non-scaling-stroke" d="M630 411L731 424L737 446L690 505L568 487L563 474Z"/>
+              <path id="hs-lamp" vector-effect="non-scaling-stroke" d="M264 159L296 152H304L335 159L365 249L364 254L310 255L312 262L322 267L330 284V306L322 322L321 333H282L281 322L272 306L271 284L279 267L290 262L292 255L234 254L233 249Z"/>
+              <path id="hs-picture" vector-effect="non-scaling-stroke" d="M573 47L716 37L718 184L573 183Z"/>
+            </defs>
+            <g class="hotspot" role="button" tabindex="0" aria-label="TheBigMove.tv" data-tv-trigger hidden>
+              <use class="hs-halo" href="#hs-tv"/><use class="hs-shape" href="#hs-tv"/>
+            </g>
+            <a class="hotspot" href="https://classiccartstudio.com" aria-label="Classic Cart Studio">
+              <use class="hs-halo" href="#hs-console"/><use class="hs-halo" href="#hs-controller"/>
+              <use class="hs-shape" href="#hs-console"/><use class="hs-shape" href="#hs-controller"/>
+            </a>
+            <a class="hotspot" href="https://hallwayechoes.com" aria-label="Hallway Echoes">
+              <use class="hs-halo" href="#hs-yearbook"/><use class="hs-shape" href="#hs-yearbook"/>
+            </a>
+            <g class="hotspot" aria-hidden="true" data-egg-trigger hidden><use class="hs-shape" href="#hs-lamp"/></g>
+            <g class="hotspot" aria-hidden="true" data-egg-trigger hidden><use class="hs-shape" href="#hs-picture"/></g>
+          </svg>
+          <div class="tv-ad" data-tv-ad hidden aria-hidden="true">
+            <p class="tv-ad-title">TheBigMove.tv</p>
+            <p class="tv-ad-release">Coming in 2027</p>
+          </div>
+          <p class="visually-hidden" aria-live="polite" data-tv-status></p>
           <span class="tv-power" data-egg hidden aria-hidden="true"></span>
         </div>
       </section>
@@ -76,6 +107,26 @@
           <div class="product-info">
             <p class="product-description">A free, open-source app for organizing and playing your NES collection.</p>
             <a class="button" href="https://classiccartstudio.com">Visit site<span class="visually-hidden"> (Classic Cart Studio)</span></a>
+          </div>
+        </article>
+        <article class="product-card" aria-labelledby="product-name-tbm">
+          <div class="product-id">
+            <h3 class="product-name product-name--tbm" id="product-name-tbm"><span class="product-name-top">THE BIG</span> <span class="product-name-bottom">MOVE</span></h3>
+            <p class="product-tagline">The deepest Survivor analysis ever built.</p>
+            <p class="product-release">Coming 2027</p>
+          </div>
+          <div class="product-info">
+            <p class="product-description">Player intelligence, data-driven prep plans and interactive simulations for Survivor fans.</p>
+          </div>
+        </article>
+        <article class="product-card" aria-labelledby="product-name-he">
+          <div class="product-id">
+            <h3 class="product-name product-name--he" id="product-name-he"><span class="product-name-top">HALLWAY</span> <span class="product-name-bottom">ECHOES</span></h3>
+            <p class="product-tagline">A new home for school memories.</p>
+            <p class="product-release">Coming 2027</p>
+          </div>
+          <div class="product-info">
+            <p class="product-description">A searchable photo archive for high school alumni.</p>
           </div>
         </article>
       </section>
