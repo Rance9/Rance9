@@ -23,6 +23,8 @@
   function hide(el) { el.setAttribute('hidden', ''); }
   function announce(text) { if (status) { status.textContent = text; } }
   function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
+  // Leaving a game played in the dark turns the room's lights back on.
+  function lightsOn() { if (hero) { hero.classList.remove('is-dark'); } }
 
   // A dust bunny, 10 x 8 pixels: # outline, a fuzz, K eyes.
   var DUST_SPRITE = ['..#.##.#..', '.#aaaaaa#.', '#aaaaaaaa#', '#aKaaaaKa#', '#aaaaaaaa#',
@@ -572,6 +574,7 @@
       returnFocus = null;
       place(tvBox());
       window.setTimeout(function () { if (state === 'off') { hide(root); } }, reducedMotion.matches ? 0 : 360);
+      lightsOn();
       announce('Game closed.');
     }
 
@@ -777,6 +780,7 @@
       clearBunnies();
       best = Math.max(best, score);
       hide(hud);
+      lightsOn();
       showCard('TIME!', score + ' BUSTED', 'Best this visit: ' + best + '. Thanks for finding the secret.', 'Play again');
       announce('Time! You busted ' + score + ' dust bunnies. Best this visit: ' + best + '.');
     }
@@ -831,6 +835,7 @@
       }
       returnFocus = null;
       hide(root);
+      lightsOn();
       announce('Dust Bunny Hunt closed.');
     }
 
