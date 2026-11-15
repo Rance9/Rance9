@@ -23,6 +23,12 @@
   function hide(el) { el.setAttribute('hidden', ''); }
   function announce(text) { if (status) { status.textContent = text; } }
   function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
+  // Blurred, dimmed page behind the game screen and the hunt's cards. It only
+  // blocks stray clicks; Escape or the close buttons close things.
+  var backdrop = document.querySelector('[data-play-backdrop]');
+  function backdropOn() { if (backdrop) { show(backdrop); } }
+  function backdropOff() { if (backdrop) { hide(backdrop); } }
+
   // Leaving a game played in the dark turns the room's lights back on.
   function lightsOn() { if (hero) { hero.classList.remove('is-dark'); } }
 
@@ -539,6 +545,7 @@
       var active = document.activeElement;
       returnFocus = active && active !== document.body && !root.contains(active) ? active : null;
       place(tvBox());
+      backdropOn();
       show(root);
       void root.offsetWidth; // Let the screen grow from the TV.
       place(bigBox());
@@ -574,6 +581,7 @@
       returnFocus = null;
       place(tvBox());
       window.setTimeout(function () { if (state === 'off') { hide(root); } }, reducedMotion.matches ? 0 : 360);
+      backdropOff();
       lightsOn();
       announce('Game closed.');
     }
@@ -767,6 +775,7 @@
       spawnTimer = 0.3;
       updateHud();
       hide(card);
+      backdropOff();
       show(hud);
       state = 'play';
       root.setAttribute('data-state', 'play');
@@ -781,6 +790,7 @@
       best = Math.max(best, score);
       hide(hud);
       lightsOn();
+      backdropOn();
       showCard('TIME!', score + ' BUSTED', 'Best this visit: ' + best + '. Thanks for finding the secret.', 'Play again');
       announce('Time! You busted ' + score + ' dust bunnies. Best this visit: ' + best + '.');
     }
@@ -804,6 +814,7 @@
       endAd();
       var active = document.activeElement;
       returnFocus = active && active !== document.body && !root.contains(active) ? active : null;
+      backdropOn();
       show(root);
       hide(hud);
       state = 'intro';
@@ -835,6 +846,7 @@
       }
       returnFocus = null;
       hide(root);
+      backdropOff();
       lightsOn();
       announce('Dust Bunny Hunt closed.');
     }
