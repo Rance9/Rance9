@@ -118,6 +118,8 @@
               <path id="hs-yearbook" vector-effect="non-scaling-stroke" d="M630 411L731 424L737 446L690 505L568 487L563 474Z"/>
               <path id="hs-lamp" vector-effect="non-scaling-stroke" d="M264 159L296 152H304L335 159L365 249L364 254L310 255L312 262L322 267L330 284V306L322 322L321 333H282L281 322L272 306L271 284L279 267L290 262L292 255L234 254L233 249Z"/>
               <path id="hs-picture" vector-effect="non-scaling-stroke" d="M573 47L716 37L718 184L573 183Z"/>
+              <path id="hs-book" vector-effect="non-scaling-stroke" d="M148 241Q148 239 150 239H157Q159 239 159 241V321H148Z"/>
+              <path id="hs-book-hit" d="M136 234H171V326H136Z"/>
             </defs>
             <g class="hotspot" role="button" tabindex="0" aria-label="The Big Move" data-tv-trigger hidden>
               <use class="hs-halo" href="#hs-tv"/><use class="hs-shape" href="#hs-tv"/>
@@ -132,6 +134,9 @@
             <g class="hotspot" aria-hidden="true" data-lamp hidden><use class="hs-shape" href="#hs-lamp"/></g>
             <g class="hotspot" role="button" tabindex="0" aria-label="Play Cartridge Catch" data-picture hidden>
               <use class="hs-halo" href="#hs-picture"/><use class="hs-shape" href="#hs-picture"/>
+            </g>
+            <g class="hotspot" role="button" tabindex="0" aria-label="Play Memory Lane" data-book hidden>
+              <use class="hs-hit" href="#hs-book-hit"/><use class="hs-halo" href="#hs-book"/><use class="hs-shape" href="#hs-book"/>
             </g>
           </svg>
           <div class="tv-ad" data-tv-ad hidden aria-hidden="true">
@@ -153,6 +158,22 @@
               <button class="hunt-button" type="button" data-hunt-go>Start</button>
             </div>
             <button class="tv-game-close" type="button" aria-label="Close Dust Bunny Hunt" data-hunt-close>×</button>
+          </div>
+          <div class="memory" role="group" aria-label="Memory Lane" tabindex="-1" data-memory hidden>
+            <div class="memory-book">
+              <p class="memory-head"><span class="memory-title">MEMORY LANE</span><span class="memory-moves">MOVES <b data-memory-moves>0</b></span></p>
+              <div class="memory-pages">
+                <div class="memory-page" data-memory-page></div>
+                <div class="memory-page" data-memory-page></div>
+              </div>
+              <div class="memory-done" data-memory-done hidden>
+                <p class="hunt-kicker">CLEARED!</p>
+                <p class="hunt-title" data-memory-result>0 MOVES</p>
+                <p class="hunt-text" data-memory-best></p>
+                <button class="hunt-button" type="button" data-memory-again>Play again</button>
+              </div>
+              <button class="tv-game-close" type="button" aria-label="Close Memory Lane" data-memory-close>×</button>
+            </div>
           </div>
           <p class="visually-hidden" aria-live="polite" data-tv-status></p>
         </div>

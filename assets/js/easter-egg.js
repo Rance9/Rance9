@@ -6,9 +6,11 @@
  *
  * - Lamp: lights out / lights on.
  * - TV screen: a few seconds of "coming soon" for The Big Move.
- * - Picture on the wall, or the classic cheat code: the TV zooms up into
- *   Cartridge Catch. Blow the dust out of the cartridge, then catch falling
- *   cartridges and dodge the dust bunnies.
+ * - Picture on the wall: the TV zooms up into Cartridge Catch. Blow the
+ *   dust out of the cartridge, then catch falling cartridges.
+ * - The light book on the middle shelf: Memory Lane, a card-matching game.
+ * - The classic cheat code (or its swipe version on touch screens, with the
+ *   lights out): the secret Dust Bunny Hunt.
  * The clickable parts need this script, so they stay hidden without it.
  */
 (function () {
@@ -35,6 +37,41 @@
   // A dust bunny, 10 x 8 pixels: # outline, a fuzz, K eyes.
   var DUST_SPRITE = ['..#.##.#..', '.#aaaaaa#.', '#aaaaaaaa#', '#aKaaaaKa#', '#aaaaaaaa#',
     '#aaa##aaa#', '.#aaaaaa#.', '..######..'];
+  // A game cartridge (12 tall) and a heart, shared by the games below.
+  var CART_SPRITE = ['##########', '#oooooooo#', '#oLLLLLLo#', '#oLLLLLLo#', '#oLLLLLLo#',
+    '#oLLLLLLo#', '#oooooooo#', '#o-o-o-oo#', '#oooooooo#', '#oo####oo#', '#oo#..#oo#', '####..####'];
+  var HEART_SPRITE = ['.##.##.', '#######', '#######', '.#####.', '..###..', '...#...'];
+
+  // Draws a sprite (rows of characters, each mapped to a colour) as a crisp inline SVG.
+  function pixelSvg(map, colors) {
+    var ns = 'http://www.w3.org/2000/svg';
+    var svg = document.createElementNS(ns, 'svg');
+    svg.setAttribute('viewBox', '0 0 ' + map[0].length + ' ' + map.length);
+    svg.setAttribute('shape-rendering', 'crispEdges');
+    svg.setAttribute('aria-hidden', 'true');
+    svg.setAttribute('focusable', 'false');
+    for (var r = 0; r < map.length; r++) {
+      for (var c = 0; c < map[r].length; c++) {
+        var color = colors[map[r].charAt(c)];
+        if (color) {
+          var px = document.createElementNS(ns, 'rect');
+          px.setAttribute('x', c);
+          px.setAttribute('y', r);
+          px.setAttribute('width', 1);
+          px.setAttribute('height', 1);
+          px.setAttribute('fill', color);
+          svg.appendChild(px);
+        }
+      }
+    }
+    return svg;
+  }
+
+  // Only one game at a time. (The games are created further down.)
+  function anyActive() {
+    return [game, hunt, memory].some(function (g) { return g && g.isActive(); });
+  }
+
   var touchFirst = window.matchMedia ?
     window.matchMedia('(hover: none) and (pointer: coarse)') : { matches: false };
 
@@ -104,14 +141,13 @@
       teal: '#4DB6A9', tealDark: '#2B6E69', gold: '#F5A623', goldDark: '#B97A10',
       grey: '#9BA0A6', greyDark: '#6E737A', dust: '#8A8580', dustDark: '#4A4540', black: '#0B0D10'
     };
-    var CART = ['##########', '#oooooooo#', '#oLLLLLLo#', '#oLLLLLLo#', '#oLLLLLLo#',
-      '#oLLLLLLo#', '#oooooooo#', '#o-o-o-oo#', '#oooooooo#', '#oo####oo#', '#oo#..#oo#', '####..####'];
+    var CART = CART_SPRITE;
     var CART_UP = CART.slice().reverse();
     var DUST = DUST_SPRITE;
     var CONSOLE = ['....############....', '...#cccccccccccc#...', '..#ccccc####ccccc#..',
       '.#cccccc#..#cccccc#.', '#cccccccccccccccccc#', '#cRcccccccccccTcTcc#',
       '#cccccccccccccccccc#', '####################'];
-    var HEART = ['.##.##.', '#######', '#######', '.#####.', '..###..', '...#...'];
+    var HEART = HEART_SPRITE;
     var LABELS = [C.red, C.tealDark, C.teal, C.cream];
     var CONSOLE_COLORS = { '#': C.ink, c: C.cream, R: C.red, T: C.greyDark };
     var DUST_COLORS = { '#': C.dustDark, a: C.dust, K: C.black };
@@ -543,7 +579,7 @@
     }
 
     function start() {
-      if (state !== 'off') { return; }
+      if (state !== 'off' || anyActive()) { return; }
       endAd();
       if (document.fonts && document.fonts.load) { document.fonts.load('8px "Press Start 2P"'); }
       var active = document.activeElement;
@@ -596,7 +632,7 @@
   var game = createGame();
   var picture = document.querySelector('[data-picture]');
   if (game && picture) {
-    picture.addEventListener('click', function () { if (!hunt || !hunt.isActive()) { game.start(); } });
+    picture.addEventListener('click', function () { game.start(); });
     picture.addEventListener('keydown', function (event) {
       if (event.key === 'Enter' || event.key === ' ') {
         event.preventDefault();
@@ -645,28 +681,7 @@
 
     function verb() { return touchFirst.matches ? 'Tap' : 'Click'; }
 
-    function bunnySvg(colors) {
-      var svg = document.createElementNS(SVG_NS, 'svg');
-      svg.setAttribute('viewBox', '0 0 10 8');
-      svg.setAttribute('shape-rendering', 'crispEdges');
-      svg.setAttribute('aria-hidden', 'true');
-      svg.setAttribute('focusable', 'false');
-      for (var r = 0; r < DUST_SPRITE.length; r++) {
-        for (var c = 0; c < DUST_SPRITE[r].length; c++) {
-          var color = colors[DUST_SPRITE[r].charAt(c)];
-          if (color) {
-            var px = document.createElementNS(SVG_NS, 'rect');
-            px.setAttribute('x', c);
-            px.setAttribute('y', r);
-            px.setAttribute('width', 1);
-            px.setAttribute('height', 1);
-            px.setAttribute('fill', color);
-            svg.appendChild(px);
-          }
-        }
-      }
-      return svg;
-    }
+    function bunnySvg(colors) { return pixelSvg(DUST_SPRITE, colors); }
 
     function place(el, x, y) {
       el.style.left = (x / 12.8) + '%';
@@ -814,7 +829,7 @@
     }
 
     function start() {
-      if (state !== 'off' || (game && game.isActive())) { return; }
+      if (state !== 'off' || anyActive()) { return; }
       endAd();
       var active = document.activeElement;
       returnFocus = active && active !== document.body && !root.contains(active) ? active : null;
@@ -862,6 +877,215 @@
   }
 
   var hunt = createHunt();
+
+  /* ---- Memory Lane (the light book on the middle shelf) ---------------------- */
+
+  function createMemory() {
+    var root = document.querySelector('[data-memory]');
+    if (!hero || !root) { return null; }
+    var pages = root.querySelectorAll('[data-memory-page]');
+    var movesText = root.querySelector('[data-memory-moves]');
+    var done = root.querySelector('[data-memory-done]');
+    var result = root.querySelector('[data-memory-result]');
+    var bestText = root.querySelector('[data-memory-best]');
+    var again = root.querySelector('[data-memory-again]');
+    var closeButton = root.querySelector('[data-memory-close]');
+    if (pages.length !== 2 || !movesText || !done || !result || !bestText || !again || !closeButton) { return null; }
+
+    var INK = '#2B2D26';
+    var CREAM = '#F7E2CA';
+    var RED = '#D63B32';
+    var GREY = '#9BA0A6';
+    var ICONS = [
+      { name: 'cartridge', map: CART_SPRITE, colors: { '#': INK, o: GREY, L: RED, '-': '#6E737A' } },
+      { name: 'controller', map: ['..########..', '.#cccccccc#.', '#cc#ccccrcc#', '#c###ccrcrc#', '#cc#ccccrcc#', '.#cccccccc#.', '..########..'],
+        colors: { '#': INK, c: CREAM, r: RED } },
+      { name: 'TV', map: ['..#......#..', '...#....#...', '############', '#ssssssss#k#', '#ssssssss#b#', '#ssssssss#k#', '#ssssssss#b#', '############', '.##......##.'],
+        colors: { '#': INK, s: '#4DB6A9', k: RED, b: CREAM } },
+      { name: 'cassette tape', map: ['############', '#llllllllll#', '#l##llll##l#', '#l#w#ll#w#l#', '#l##llll##l#', '#llllllllll#', '#bb######bb#', '############'],
+        colors: { '#': INK, l: CREAM, w: GREY, b: GREY } },
+      { name: 'floppy disk', map: ['#########.', '#ss####ss#', '#ss#mm#ss#', '#ss####ss#', '#ssssssss#', '#llllllll#', '#lrrrrrrl#', '#llllllll#', '#llllllll#', '##########'],
+        colors: { '#': INK, s: '#2B6E69', m: GREY, l: CREAM, r: RED } },
+      { name: 'book', map: ['##########', '#bbbbbbbb#', '#bggggggb#', '#bbbbbbbb#', '#bbbggbbb#', '#bbbbbbbb#', '#bbbbbbbb#', '#bbbbbbbb#', '##########', '#pppppppp#'],
+        colors: { '#': INK, b: '#5A3E2E', g: '#F5A623', p: CREAM } },
+      { name: 'heart', map: HEART_SPRITE, colors: { '#': RED } },
+      { name: 'dust bunny', map: DUST_SPRITE, colors: { '#': '#4A4540', a: '#A49F99', K: '#0B0D10' } }
+    ];
+
+    var state = 'off';
+    var cards = [];
+    var first = null;
+    var second = null;
+    var lock = false;
+    var moves = 0;
+    var pairs = 0;
+    var best = 0;
+    var flipTimer = 0;
+    var returnFocus = null;
+
+    function shuffle(list) {
+      for (var i = list.length - 1; i > 0; i--) {
+        var j = Math.floor(Math.random() * (i + 1));
+        var t = list[i];
+        list[i] = list[j];
+        list[j] = t;
+      }
+      return list;
+    }
+
+    function setLabel(card, text) { card.el.setAttribute('aria-label', 'Card ' + card.n + ': ' + text); }
+
+    function deal() {
+      window.clearTimeout(flipTimer);
+      pages[0].textContent = '';
+      pages[1].textContent = '';
+      cards = [];
+      first = null;
+      second = null;
+      lock = false;
+      moves = 0;
+      pairs = 0;
+      movesText.textContent = '0';
+      shuffle(ICONS.concat(ICONS)).forEach(function (icon, i) {
+        var el = document.createElement('button');
+        el.type = 'button';
+        el.className = 'memory-card';
+        var inner = document.createElement('span');
+        inner.className = 'memory-card-inner';
+        var back = document.createElement('span');
+        back.className = 'memory-card-back';
+        var face = document.createElement('span');
+        face.className = 'memory-card-face';
+        face.appendChild(pixelSvg(icon.map, icon.colors));
+        inner.appendChild(back);
+        inner.appendChild(face);
+        el.appendChild(inner);
+        var card = { el: el, icon: icon, n: i + 1, up: false, done: false };
+        setLabel(card, 'face down');
+        el.addEventListener('click', function () { flip(card); });
+        pages[i < 8 ? 0 : 1].appendChild(el);
+        cards.push(card);
+      });
+    }
+
+    function turnDown(card) {
+      card.up = false;
+      card.el.classList.remove('is-up');
+      setLabel(card, 'face down');
+    }
+
+    function flip(card) {
+      if (state !== 'play' || lock || card.done || card.up) { return; }
+      card.up = true;
+      card.el.classList.add('is-up');
+      setLabel(card, card.icon.name);
+      if (!first) { first = card; announce(card.icon.name + '.'); return; }
+      second = card;
+      moves++;
+      movesText.textContent = String(moves);
+      if (first.icon === second.icon) {
+        [first, second].forEach(function (c) {
+          c.done = true;
+          c.el.classList.add('is-matched');
+          c.el.setAttribute('aria-label', 'Card ' + c.n + ': ' + c.icon.name + ', matched');
+        });
+        pairs++;
+        first = null;
+        second = null;
+        if (pairs === ICONS.length) { finish(); } else { announce(card.icon.name + '. A match!'); }
+      } else {
+        lock = true;
+        announce(card.icon.name + '. No match.');
+        var a = first;
+        var b = second;
+        flipTimer = window.setTimeout(function () {
+          turnDown(a);
+          turnDown(b);
+          first = null;
+          second = null;
+          lock = false;
+        }, 900);
+      }
+    }
+
+    function finish() {
+      state = 'done';
+      root.setAttribute('data-state', 'done');
+      best = best ? Math.min(best, moves) : moves;
+      result.textContent = moves + ' MOVES';
+      bestText.textContent = 'Best this visit: ' + best + ' moves.';
+      lightsOn();
+      show(done);
+      try { again.focus({ preventScroll: true }); } catch (e) { again.focus(); }
+      announce('Cleared in ' + moves + ' moves. Best this visit: ' + best + '.');
+    }
+
+    function play() {
+      hide(done);
+      deal();
+      state = 'play';
+      root.setAttribute('data-state', 'play');
+      try { cards[0].el.focus({ preventScroll: true }); } catch (e) { cards[0].el.focus(); }
+    }
+
+    function onKey(event) {
+      if (event.key === 'Escape') { event.preventDefault(); stop(); }
+    }
+
+    function bringIntoView() {
+      var r = root.getBoundingClientRect();
+      var delta = 0;
+      if (r.top < 8) { delta = r.top - 8; } else if (r.bottom > window.innerHeight - 8) { delta = Math.min(r.top - 8, r.bottom - window.innerHeight + 8); }
+      if (delta) { window.scrollBy({ top: delta, behavior: reducedMotion.matches ? 'auto' : 'smooth' }); }
+    }
+
+    function start() {
+      if (state !== 'off' || anyActive()) { return; }
+      endAd();
+      var active = document.activeElement;
+      returnFocus = active && active !== document.body && !root.contains(active) ? active : null;
+      backdropOn();
+      show(root);
+      play();
+      bringIntoView();
+      announce('Memory Lane. Find the ' + ICONS.length + ' pairs, two cards at a time. Press Escape to leave.');
+      document.addEventListener('keydown', onKey, true);
+    }
+
+    function stop() {
+      if (state === 'off') { return; }
+      window.clearTimeout(flipTimer);
+      state = 'off';
+      root.setAttribute('data-state', 'off');
+      document.removeEventListener('keydown', onKey, true);
+      if (root.contains(document.activeElement)) {
+        if (returnFocus && document.contains(returnFocus)) { returnFocus.focus({ preventScroll: true }); } else { document.activeElement.blur(); }
+      }
+      returnFocus = null;
+      hide(root);
+      backdropOff();
+      lightsOn();
+      announce('Memory Lane closed.');
+    }
+
+    again.addEventListener('click', function () { if (state === 'done') { play(); } });
+    closeButton.addEventListener('click', stop);
+
+    return { start: start, isActive: function () { return state !== 'off'; } };
+  }
+
+  var memory = createMemory();
+  var book = document.querySelector('[data-book]');
+  if (memory && book) {
+    book.addEventListener('click', function () { memory.start(); });
+    book.addEventListener('keydown', function (event) {
+      if (event.key === 'Enter' || event.key === ' ') {
+        event.preventDefault();
+        if (!event.repeat) { memory.start(); }
+      }
+    });
+    show(book);
+  }
 
   /* ---- Yearbook and console: a product pop-up before leaving the site --------- */
 
@@ -953,7 +1177,7 @@
 
   document.addEventListener('keydown', function (event) {
     var key = event.key;
-    if (!hunt || hunt.isActive() || (game && game.isActive())) { keyCode.reset(); return; }
+    if (!hunt || anyActive()) { keyCode.reset(); return; }
     if (typeof key !== 'string' || event.repeat || event.isComposing) { return; }
     if (event.ctrlKey || event.altKey || event.metaKey || modifierOnly[key]) { return; }
     if (key === ' ' || key === 'Enter') { return; } // "B space A" or a final Enter still count.
@@ -974,7 +1198,7 @@
     hero.addEventListener('pointerdown', function (event) {
       swipeStart = null;
       if (event.pointerType === 'mouse' || !touchFirst.matches || !hero.classList.contains('is-dark') ||
-        hunt.isActive() || (game && game.isActive())) { return; }
+        anyActive()) { return; }
       swipeStart = { x: event.clientX, y: event.clientY, id: event.pointerId };
     });
     hero.addEventListener('pointerup', function (event) {

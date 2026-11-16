@@ -474,6 +474,116 @@ main:focus { outline: none; }
 @keyframes hunt-puff { to { transform: translate(var(--dx), var(--dy)); opacity: 0; } }
 @keyframes hunt-rise { to { transform: translate(-50%, -1.2em); opacity: 0; } }
 
+/* Memory Lane (the book on the middle shelf): an open book of cards. */
+.memory {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  z-index: 5;
+  width: min(30rem, calc(100vw - 32px));
+  transform: translate(-50%, -50%);
+}
+.memory:focus { outline: none; }
+.memory-book {
+  position: relative;
+  padding: 0.9rem 1rem 1.1rem;
+  border-radius: 10px;
+  background: #FBF1E3;
+  color: var(--ink);
+  box-shadow: 0 0 0 4px #3E2D25, 0 18px 48px rgba(0, 0, 0, 0.4);
+}
+.memory-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin: 0 2.5rem 0.8rem 0;
+  font: 8px/1.4 var(--pixel);
+  color: var(--ink-brown);
+}
+.memory-title { font-size: 16px; }
+.memory-moves b { color: var(--teal); font-weight: 400; }
+@media (max-width: 419px) { .memory-title { font-size: 8px; } }
+.memory-pages {
+  position: relative;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.25rem;
+}
+.memory-pages::before { /* The book's spine. */
+  content: "";
+  position: absolute;
+  top: -0.3rem;
+  bottom: -0.3rem;
+  left: 50%;
+  width: 2px;
+  transform: translateX(-50%);
+  background: #D9C4A8;
+  box-shadow: 0 0 10px 4px rgba(120, 90, 60, 0.18);
+}
+.memory-page {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.45rem;
+}
+.memory-card {
+  aspect-ratio: 1 / 1;
+  padding: 0;
+  border: 0;
+  border-radius: 8px;
+  background: none;
+  perspective: 600px;
+  cursor: pointer;
+}
+.memory-card.is-matched { cursor: default; }
+.memory-card-inner {
+  position: relative;
+  display: block;
+  width: 100%;
+  height: 100%;
+  transform-style: preserve-3d;
+  transition: transform 0.3s ease;
+}
+.memory-card.is-up .memory-card-inner,
+.memory-card.is-matched .memory-card-inner { transform: rotateY(180deg); }
+.memory-card-back,
+.memory-card-face {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
+}
+.memory-card-back {
+  background: #2B6E69 repeating-linear-gradient(45deg, rgba(255, 255, 255, 0.09) 0 6px, rgba(255, 255, 255, 0) 6px 12px);
+  box-shadow: inset 0 0 0 3px #1D4F4B;
+}
+.memory-card-face {
+  transform: rotateY(180deg);
+  background: #FFFFFF;
+  box-shadow: inset 0 0 0 2px #2B2D26;
+}
+.memory-card-face svg { display: block; width: 64%; height: auto; }
+.memory-card.is-matched .memory-card-face { box-shadow: inset 0 0 0 3px var(--tbm-gold); }
+.memory-card:focus-visible { outline: 3px solid var(--teal); outline-offset: 2px; }
+.memory-done {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 1.25rem;
+  border-radius: 10px;
+  background: rgba(24, 29, 36, 0.92);
+  color: var(--card-text);
+  text-align: center;
+}
+.memory .tv-game-close { top: 8px; right: 8px; }
+
 /* Product pop-up from the yearbook and the console: the product's own look,
    a short blurb, its release, and a pill that opens the site in a new tab. */
 .product-modal {
@@ -573,6 +683,8 @@ main:focus { outline: none; }
 }
 .hotspot .hs-shape { pointer-events: fill; }
 .hotspot .hs-halo { fill: none; pointer-events: none; }
+/* A wider, invisible tap area for thin objects such as a book spine. */
+.hotspot .hs-hit { pointer-events: fill; }
 
 @media (hover: hover) {
   /* Overlay blending warms the object up like a light coming on while keeping its detail. */
