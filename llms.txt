@@ -5,5 +5,5 @@
 ## Pages
 
 - [Home](https://rance9.com/): Projects, About and Contact.
-- [New Carts](https://rance9.com/new-carts/): Five original game concepts for the NES: Crowned, One Flame, Scribble Beast, Bolts and Drop & Dash.
+- [NES Cart Concepts](https://rance9.com/new-carts/): Five original game concepts for the NES: Crowned, One Flame, Scribble Beast, Bolts and Drop & Dash.
 - [Privacy](https://rance9.com/privacy/): Website privacy and hosting information.

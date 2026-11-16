@@ -1102,6 +1102,10 @@ main:focus { outline: none; }
   }
 }
 
+/* Projects: four cards on a shared grid. On wide screens the cards sit two
+   per row and share row tracks (subgrid), so every part of a card (title,
+   tagline, release, divider, description, button) lines up with the same
+   part of the card beside it, whatever the text lengths. */
 #projects .projects-grid {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
@@ -1113,40 +1117,22 @@ main:focus { outline: none; }
   margin: 0;
 }
 
-#projects .product-name--nc {
-  position: relative;
-  font-family: var(--mono);
-  font-weight: 700;
-  font-size: 2.5rem;
-  line-height: 1.05;
-  letter-spacing: 0;
-}
-
+/* NES Cart Concepts: the title wears its page's logo, lemon pixel letters
+   with coral and sky-blue layered shadows. */
+#projects .product-name--nc .product-name-top,
 #projects .product-name--nc .product-name-bottom {
-  color: var(--card-text);
+  color: #ccd278;
+  text-shadow: 2px 2px 0 #ec6a64, 4px 4px 0 #4c9aec;
+}
+#projects .product-name--nc .product-name-bottom {
   letter-spacing: 0;
   margin-right: 0;
 }
 
-#projects .product-name--nc::after {
-  content: "";
-  position: absolute;
-  left: calc(50% - 18px);
-  bottom: -6px;
-  width: 4px;
-  height: 4px;
-  background: #d48820;
-  box-shadow:
-    8px 0 #ec6a64,
-    16px 0 #982220,
-    24px 0 #ccd278,
-    32px 0 #98e2b4;
-  pointer-events: none;
-}
-
-@media (max-width: 1023px) {
-  #projects .product-name--nc {
-    font-size: 2.25rem;
+@media (max-width: 359px) {
+  #projects .product-name--nc .product-name-top,
+  #projects .product-name--nc .product-name-bottom {
+    text-shadow: 1px 1px 0 #ec6a64, 2px 2px 0 #4c9aec;
   }
 }
 
@@ -1156,19 +1142,37 @@ main:focus { outline: none; }
   }
 
   #projects .projects-grid > .product-card {
+    grid-row: span 5;
     grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: subgrid;
+    row-gap: 0;
+    align-items: start;
   }
 
   #projects .projects-grid > .product-card > .product-id {
+    grid-row: 1 / span 3;
+    display: grid;
+    grid-template-rows: subgrid;
+    row-gap: 0;
+    justify-items: center;
     padding-right: 0;
   }
 
   #projects .projects-grid > .product-card > .product-info {
-    align-items: center;
+    grid-row: 4 / span 2;
+    display: grid;
+    grid-template-rows: subgrid;
+    row-gap: 0;
+    align-items: start;
+    justify-items: center;
     text-align: center;
     border-left: 0;
     border-top: 1px solid var(--card-rule);
     margin-top: 1.4rem;
     padding: 1.4rem 0 0;
+  }
+
+  #projects .projects-grid .product-name {
+    align-self: end;
   }
 }
