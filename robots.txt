@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://rance9.com/sitemap.xml
