@@ -75,6 +75,20 @@
   var touchFirst = window.matchMedia ?
     window.matchMedia('(hover: none) and (pointer: coarse)') : { matches: false };
 
+  // Focus (and its visible ring) is only handed back to keyboard users: a
+  // click or tap on the picture never leaves an outline behind.
+  var lastInput = 'pointer';
+  document.addEventListener('keydown', function () { lastInput = 'keyboard'; }, true);
+  document.addEventListener('pointerdown', function () { lastInput = 'pointer'; }, true);
+  function keyboardFocus() {
+    var active = document.activeElement;
+    return lastInput === 'keyboard' && active && active !== document.body ? active : null;
+  }
+  var hotspotEls = document.querySelectorAll('.hotspot');
+  for (var h = 0; h < hotspotEls.length; h++) {
+    hotspotEls[h].addEventListener('mousedown', function (event) { event.preventDefault(); });
+  }
+
   /* ---- TV screen: "coming soon" ----------------------------------------- */
 
   var tv = document.querySelector('[data-tv-trigger]');
@@ -582,8 +596,8 @@
       if (state !== 'off' || anyActive()) { return; }
       endAd();
       if (document.fonts && document.fonts.load) { document.fonts.load('8px "Press Start 2P"'); }
-      var active = document.activeElement;
-      returnFocus = active && active !== document.body && !root.contains(active) ? active : null;
+      var active = keyboardFocus();
+      returnFocus = active && !root.contains(active) ? active : null;
       place(tvBox());
       backdropOn();
       show(root);
@@ -831,8 +845,8 @@
     function start() {
       if (state !== 'off' || anyActive()) { return; }
       endAd();
-      var active = document.activeElement;
-      returnFocus = active && active !== document.body && !root.contains(active) ? active : null;
+      var active = keyboardFocus();
+      returnFocus = active && !root.contains(active) ? active : null;
       backdropOn();
       show(root);
       hide(hud);
@@ -1042,8 +1056,8 @@
     function start() {
       if (state !== 'off' || anyActive()) { return; }
       endAd();
-      var active = document.activeElement;
-      returnFocus = active && active !== document.body && !root.contains(active) ? active : null;
+      var active = keyboardFocus();
+      returnFocus = active && !root.contains(active) ? active : null;
       backdropOn();
       show(root);
       play();
@@ -1099,6 +1113,7 @@
     var modalLinkNote = modal.querySelector('[data-modal-link-note]');
     var links = document.querySelectorAll('[data-product-link]');
 
+    var modalByKeyboard = false;
     var openProduct = function (link) {
       var product = link.getAttribute('data-product-link');
       var source = document.querySelector('.product-card[data-product="' + product + '"]');
@@ -1114,6 +1129,7 @@
       modalLink.setAttribute('href', href);
       modalLinkNote.textContent = ' (opens ' + href.replace(/^https?:\/\//, '').replace(/\/$/, '') + ' in a new tab)';
       modal.setAttribute('data-theme', product);
+      modalByKeyboard = lastInput === 'keyboard';
       endAd();
       modal.showModal();
       return true;
@@ -1127,6 +1143,10 @@
         if (openProduct(this)) { event.preventDefault(); }
       });
     }
+    modal.addEventListener('close', function () {
+      var active = document.activeElement;
+      if (!modalByKeyboard && active && active !== document.body) { active.blur(); }
+    });
     modal.addEventListener('click', function (event) {
       // The backdrop and the close button close it; the pill opens the site and closes it too.
       if (event.target === modal || event.target.closest('[data-modal-close]') || event.target.closest('[data-modal-link]')) {
