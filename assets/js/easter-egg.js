@@ -511,7 +511,11 @@
       if (state === 'off') { return; }
       event.preventDefault();
       pointerMode(event);
-      try { canvas.setPointerCapture(event.pointerId); } catch (e) { /* not needed */ }
+      // Touch drags stay with the screen; a mouse is followed anywhere anyway,
+      // and capturing it would hide the pointer's normal cursor elsewhere.
+      if (event.pointerType !== 'mouse') {
+        try { canvas.setPointerCapture(event.pointerId); } catch (e) { /* not needed */ }
+      }
       aimAt(event);
       if (state !== 'play') { action(); }
     });

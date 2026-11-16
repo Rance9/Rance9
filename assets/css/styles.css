@@ -329,7 +329,8 @@ main:focus { outline: none; }
   image-rendering: pixelated;
   cursor: pointer;
 }
-.tv-game[data-state="play"] .tv-game-screen { cursor: none; }
+/* Keep the mouse pointer visible while playing (the console follows it). */
+.tv-game[data-state="play"] .tv-game-screen { cursor: default; }
 .tv-game-close {
   position: absolute;
   top: 6px;
@@ -358,6 +359,7 @@ main:focus { outline: none; }
   background: rgba(34, 26, 21, 0.4);
   -webkit-backdrop-filter: blur(10px);
   backdrop-filter: blur(10px);
+  cursor: default;
 }
 
 /* Dust Bunny Hunt (secret): the whole picture is the playfield. */
@@ -365,6 +367,7 @@ main:focus { outline: none; }
   position: absolute;
   inset: 0;
   z-index: 4;
+  cursor: default;
   -webkit-user-select: none;
   user-select: none;
   touch-action: manipulation;
@@ -486,6 +489,7 @@ main:focus { outline: none; }
   background: rgba(34, 26, 21, 0.4);
   -webkit-backdrop-filter: blur(10px);
   backdrop-filter: blur(10px);
+  cursor: default;
 }
 .product-modal-body {
   position: relative;
